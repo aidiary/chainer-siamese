@@ -15,10 +15,19 @@ class SiameseNetwork(chainer.Chain):
         )
 
 
-    def forward_once(self, x):
-        pass
+    def forward_once(self, x_data):
+        h = F.max_pooling_2d(self.conv1(x_data), ksize=2, stride=2)
+        h = F.max_pooling_2d(self.conv2(h), ksize=2, stride=2)
+        h = F.relu(self.fc3(h))
+        h = self.fc4(h)
+        y = self.fc5(h)
+        return y
 
 
-    def __call__(self, x0, x1, label):
+    def __call__(self, x0_data, x1_data, label):
+        # 双子で同じCNNを使うことでパラメータは共有する
+        x0 = self.forward_once(x0_data)
+        x1 = self.forward_once(x1_data)
+
         # contrastive lossを返す
-        pass
+        return F.contrastive(x0, x1, label, margin=1)
