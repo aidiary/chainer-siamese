@@ -1,18 +1,11 @@
 import argparse
 
-try:
-    import matplotlib
-    matplotlib.use('Agg')
-except ImportError:
-    pass
-
 import chainer
 import chainer.links as L
 from chainer import training
 from chainer.training import extensions
 
 from net import SiameseNetwork
-#from updater import SiameseUpdater
 
 import random
 import numpy as np
@@ -49,6 +42,17 @@ def create_pairs(data, digit_indices):
     return x0_data, x1_data, label
 
 
+def create_iterator(datasets, batchsize):
+    data, label = datasets._datasets[0], datasets._datasets[1]
+    digit_indices = [np.where(label == i)[0] for i in range(10)]
+    x0_data, x1_data, label = create_pairs(data, digit_indices)
+
+    dd = chainer.datasets.DictDataset(x0_data=x0_data, x1_data=x1_data, label=label)
+    data_iter = chainer.iterators.SerialIterator(dd, batchsize)
+
+    return data_iter
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', '-g', type=int, default=-1,
@@ -61,26 +65,12 @@ def main():
                         help='Directory to output the result')
     args = parser.parse_args()
 
+    # create pair dataset iterator
     train, test = chainer.datasets.get_mnist(ndim=3)
-    # train_iter = chainer.iterators.SerialIterator(train, args.batchsize)
-    # test_iter = chainer.iterators.SerialIterator(test, args.batchsize, repeat=False, shuffle=False)
+    train_iter = create_iterator(train, args.batchsize)
+    test_iter = create_iterator(test, args.batchsize)
 
-    # model（loss）への入力がx0, x1, labelの3つなのでTupleDatasetではなくDictDatasetを使う
-
-    data, label = train._datasets[0], train._datasets[1]
-    digit_indices = [np.where(label == i)[0] for i in range(10)]
-    x0_data, x1_data, label = create_pairs(data, digit_indices)
-
-    data, label = test._datasets[0], test._datasets[1]
-    digit_indices = [np.where(label == i)[0] for i in range(10)]
-    x0_data, x1_data, label = create_pairs(data, digit_indices)
-
-    train = chainer.datasets.DictDataset(x0_data=x0_data, x1_data=x1_data, label=label)
-    train_iter = chainer.iterators.SerialIterator(train, args.batchsize)
-
-    test = chainer.datasets.DictDataset(x0_data=x0_data, x1_data=x1_data, label=label)
-    test_iter = chainer.iterators.SerialIterator(test, args.batchsize)
-
+    # create siamese network and train it
     model = SiameseNetwork()
     if args.gpu >= 0:
         chainer.cuda.get_device(args.gpu).use()
@@ -90,8 +80,6 @@ def main():
     optimizer.setup(model)
 
     updater = training.StandardUpdater(train_iter, optimizer, device=args.gpu)
-#    updater = SiameseUpdater(model=model, iterator=train_iter,
-#                             optimizer=optimizer, device=args.gpu)
     trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=args.out)
 
     trainer.extend(extensions.Evaluator(test_iter, model, device=args.gpu))
