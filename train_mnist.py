@@ -42,13 +42,16 @@ def create_pairs(data, digit_indices):
     return x0_data, x1_data, label
 
 
-def create_iterator(datasets, batchsize):
+def create_iterator(datasets, batchsize, test=False):
     data, label = datasets._datasets[0], datasets._datasets[1]
     digit_indices = [np.where(label == i)[0] for i in range(10)]
     x0_data, x1_data, label = create_pairs(data, digit_indices)
 
     dd = chainer.datasets.DictDataset(x0_data=x0_data, x1_data=x1_data, label=label)
-    data_iter = chainer.iterators.SerialIterator(dd, batchsize)
+    if test:
+        data_iter = chainer.iterators.SerialIterator(dd, batchsize, repeat=False, shuffle=False)
+    else:
+        data_iter = chainer.iterators.SerialIterator(dd, batchsize)
 
     return data_iter
 
@@ -68,7 +71,7 @@ def main():
     # create pair dataset iterator
     train, test = chainer.datasets.get_mnist(ndim=3)
     train_iter = create_iterator(train, args.batchsize)
-    test_iter = create_iterator(test, args.batchsize)
+    test_iter = create_iterator(test, args.batchsize, test=True)
 
     # create siamese network and train it
     model = SiameseNetwork()
