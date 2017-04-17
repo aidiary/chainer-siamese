@@ -49,7 +49,7 @@ def create_iterator(datasets, batchsize, test=False):
 
     dd = chainer.datasets.DictDataset(x0_data=x0_data, x1_data=x1_data, label=label)
     if test:
-        data_iter = chainer.iterators.SerialIterator(dd, batchsize, repeat=False, shuffle=False)
+        data_iter = chainer.iterators.SerialIterator(dd, batchsize, repeat=False)
     else:
         data_iter = chainer.iterators.SerialIterator(dd, batchsize)
 
@@ -60,7 +60,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', '-g', type=int, default=-1,
                         help='GPU ID (negative value indicates CPU)')
-    parser.add_argument('--epoch', '-e', type=int, default=100,
+    parser.add_argument('--epoch', '-e', type=int, default=16,
                         help='Number of sweeps over the dataset to train')
     parser.add_argument('--batchsize', '-b', type=int, default=128,
                         help='Number of images in each mini-batch')
@@ -88,8 +88,7 @@ def main():
     trainer.extend(extensions.Evaluator(test_iter, model, device=args.gpu))
     trainer.extend(extensions.LogReport())
     trainer.extend(extensions.PrintReport(
-        ['epoch', 'main/loss', 'validation/main/loss',
-         'main/accuracy', 'validation/main/accuracy', 'elapsed_time']
+        ['epoch', 'main/loss', 'validation/main/loss', 'elapsed_time']
     ))
     trainer.extend(extensions.ProgressBar())
 

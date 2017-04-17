@@ -1,6 +1,7 @@
 import chainer
 import chainer.functions as F
 import chainer.links as L
+from chainer import reporter
 
 
 class SiameseNetwork(chainer.Chain):
@@ -30,4 +31,8 @@ class SiameseNetwork(chainer.Chain):
         x1 = self.forward_once(x1_data)
 
         # contrastive lossを返す
-        return F.contrastive(x0, x1, label, margin=1)
+        loss = F.contrastive(x0, x1, label, margin=1)
+
+        reporter.report({'loss': loss}, self)
+
+        return loss
