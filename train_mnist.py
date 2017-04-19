@@ -60,7 +60,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', '-g', type=int, default=-1,
                         help='GPU ID (negative value indicates CPU)')
-    parser.add_argument('--epoch', '-e', type=int, default=16,
+    parser.add_argument('--epoch', '-e', type=int, default=32,
                         help='Number of sweeps over the dataset to train')
     parser.add_argument('--batchsize', '-b', type=int, default=128,
                         help='Number of images in each mini-batch')
@@ -86,7 +86,7 @@ def main():
     trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=args.out)
 
     trainer.extend(extensions.Evaluator(test_iter, model, device=args.gpu))
-    trainer.extend(extensions.snapshot(), trigger=(args.epoch, 'epoch'))
+    trainer.extend(extensions.snapshot_object(model, 'model.npz'), trigger=(args.epoch, 'epoch'))
     trainer.extend(extensions.LogReport())
     trainer.extend(extensions.PrintReport(
         ['epoch', 'main/loss', 'validation/main/loss', 'elapsed_time']
