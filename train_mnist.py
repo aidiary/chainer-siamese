@@ -15,7 +15,9 @@ def create_pairs(data, digit_indices):
     x1_data = []
     label = []
 
+    # 各クラスで最小のデータ数を取得
     n = min([len(digit_indices[d]) for d in range(10)]) - 1
+
     for d in range(10):
         for i in range(n):  # 各数字でn個のペアを作る
             # 同じクラスのペアを作る
@@ -43,8 +45,13 @@ def create_pairs(data, digit_indices):
 
 
 def create_iterator(datasets, batchsize, test=False):
-    data, label = datasets._datasets[0], datasets._datasets[1]
+    data, label = datasets._datasets
+
+    # 各クラスのインデックス集合を取得
     digit_indices = [np.where(label == i)[0] for i in range(10)]
+
+    # Siamese用の学習データを作成
+    # labelは同じクラスのとき1、異なるクラスのとき0
     x0_data, x1_data, label = create_pairs(data, digit_indices)
 
     dd = chainer.datasets.DictDataset(x0_data=x0_data, x1_data=x1_data, label=label)
