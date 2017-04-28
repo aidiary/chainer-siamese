@@ -88,9 +88,11 @@ def main():
     trainer.extend(extensions.Evaluator(test_iter, model, device=args.gpu))
     trainer.extend(extensions.snapshot_object(model, 'model.npz'), trigger=(args.epoch, 'epoch'))
     trainer.extend(extensions.LogReport())
+    trainer.extend(extensions.PlotReport(
+        ['main/loss', 'validation/main/loss'],
+        'epoch', file_name='loss.png'))
     trainer.extend(extensions.PrintReport(
-        ['epoch', 'main/loss', 'validation/main/loss', 'elapsed_time']
-    ))
+        ['epoch', 'main/loss', 'validation/main/loss', 'elapsed_time']))
     trainer.extend(extensions.ProgressBar())
 
     trainer.run()
