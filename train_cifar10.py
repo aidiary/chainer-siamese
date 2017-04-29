@@ -5,7 +5,7 @@ import chainer.links as L
 from chainer import training
 from chainer.training import extensions
 
-from net import SiameseNetwork
+from net import SiameseNetwork_v2
 
 import random
 import numpy as np
@@ -63,6 +63,16 @@ def create_iterator(datasets, batchsize, test=False):
     return data_iter
 
 
+class TestModeEvaluator(extensions.Evaluator):
+
+    def evaluate(self):
+        model = self.get_target('main')
+        model.train = False
+        ret = super(TestModeEvaluator, self).evaluate()
+        model.train = True
+        return ret
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', '-g', type=int, default=-1,
@@ -81,7 +91,7 @@ def main():
     test_iter = create_iterator(test, args.batchsize, test=True)
 
     # create siamese network and train it
-    model = SiameseNetwork()
+    model = SiameseNetwork_v2()
     if args.gpu >= 0:
         chainer.cuda.get_device(args.gpu).use()
         model.to_gpu()
@@ -92,7 +102,7 @@ def main():
     updater = training.StandardUpdater(train_iter, optimizer, device=args.gpu)
     trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=args.out)
 
-    trainer.extend(extensions.Evaluator(test_iter, model, device=args.gpu))
+    trainer.extend(TestModeEvaluator(test_iter, model, device=args.gpu))
     trainer.extend(extensions.snapshot_object(model, 'model.npz'), trigger=(args.epoch, 'epoch'))
     trainer.extend(extensions.LogReport())
     trainer.extend(extensions.PlotReport(
